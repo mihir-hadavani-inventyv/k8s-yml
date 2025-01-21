@@ -3,7 +3,7 @@ kind: Pod
 metadata: 
   name: pod3
   labels: 
-    app: myapp1
+    app: myapp
     type: fontend
 
 spec:
