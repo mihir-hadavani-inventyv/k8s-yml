@@ -15,4 +15,4 @@ spec:
           cpu: 0.1
         limits:
           cpu: 0.5
-          memory: 200Mi
+          memory: 150Mi
