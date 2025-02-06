@@ -13,4 +13,5 @@ spec:
           name: first-volume
   volumes:
     - name: first-volume
-      emptyDir: {}
+      hostPath:
+        path: /tmp/data
