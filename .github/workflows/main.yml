@@ -18,14 +18,9 @@ jobs:
           mkdir -p ~/.docker
           kubectl get secret harbor-cred -n actions-runner-system -o jsonpath="{.data.\.dockerconfigjson}" | base64 --decode > ~/.docker/config.json
 
-      - name: Login to Harbor (Kubernetes)
-        run: |
-          echo "${{ secrets.HARBOR_PASSWORD }}" | docker login harbor-registry.harbor.svc.cluster.local:5000 \
-            -u ${{ secrets.HARBOR_USERNAME }} --password-stdin
-
       - name: Build and Push Docker Image
         env:
-          IMAGE_NAME: my-app  # Change this to your app name
+          IMAGE_NAME: nginx-custom  # Change this to your app name
           HARBOR_REGISTRY: harbor-registry.harbor.svc.cluster.local:5000
           HARBOR_PROJECT: inventyv  # Change this to your Harbor project
         run: |
