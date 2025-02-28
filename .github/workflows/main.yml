@@ -13,7 +13,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Configure Docker for Insecure Harbor Registry (No systemd)
+      - name: Configure Docker for Insecure Harbor Registry
         run: |
           sudo mkdir -p /etc/docker
           echo '{
@@ -38,13 +38,14 @@ jobs:
         run: |
           docker tag coolgourav147/nginx-custom $HARBOR_REGISTRY/$HARBOR_PROJECT/$IMAGE_NAME:latest 
 
-      - name: Push Image to Harbor
+      - name: Push Image to Harbor (Force HTTP)
         env:
           IMAGE_NAME: nginx-custom
           HARBOR_REGISTRY: harbor-registry.harbor.svc.cluster.local:5000
           HARBOR_PROJECT: inventyv
         run: |
-          docker push $HARBOR_REGISTRY/$HARBOR_PROJECT/$IMAGE_NAME:latest
+          docker push $HARBOR_REGISTRY/$HARBOR_PROJECT/$IMAGE_NAME:latest || \
+          (echo "Retrying with HTTP..." && docker push --disable-content-trust=false $HARBOR_REGISTRY/$HARBOR_PROJECT/$IMAGE_NAME:latest)
 
       - name: Logout from Harbor
         run: docker logout harbor-registry.harbor.svc.cluster.local:5000
