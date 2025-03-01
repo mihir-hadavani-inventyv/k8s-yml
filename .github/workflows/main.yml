@@ -1,41 +1,53 @@
-name: Build and Push to Harbor (K8s)
+name: 🚀 Build and Push to Harbor (K8s)
 
 on:
   push:
     branches:
-      - main  # Change to your desired branch
+      - main  # Change as needed
 
 jobs:
   build-and-push:
-    runs-on: self-hosted  # Ensure this matches your Kubernetes runner label
+    runs-on: self-hosted  # Ensure your runner is configured
 
     steps:
-      - name: Checkout Code
+      - name: 🔄 Checkout Code
         uses: actions/checkout@v3
 
-      - name: Mount Kubernetes Secret for Docker Login
+      - name: ⚙️ Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          config-inline: |
+            [registry."harbor-registry.harbor.svc.cluster.local:5000"]
+              http = true
+              insecure = true
+
+      - name: 🔑 Load Harbor Credentials from Kubernetes Secret
         run: |
           mkdir -p ~/.docker
           kubectl get secret harbor-cred -n actions-runner-system -o jsonpath="{.data.\.dockerconfigjson}" | base64 --decode > ~/.docker/config.json
 
-      - name: Pull Image from Docker Hub
-        run: docker pull coolgourav147/nginx-custom
+      - name: 🔐 Login to Harbor Registry
+        uses: docker/login-action@v2
+        with:
+          registry: harbor-registry.harbor.svc.cluster.local:5000
+          username: ${{ secrets.HARBOR_USERNAME }}
+          password: ${{ secrets.HARBOR_PASSWORD }}
 
-      - name: Tag Image for Harbor (K8s)
-        env:
-          IMAGE_NAME: nginx-custom
-          HARBOR_REGISTRY: harbor-registry.harbor.svc.cluster.local:5000
-          HARBOR_PROJECT: inventyv
+      - name: 📥 Pull Base Image from DockerHub
         run: |
-          docker tag coolgourav147/nginx-custom $HARBOR_REGISTRY/$HARBOR_PROJECT/$IMAGE_NAME:latest 
+          docker pull coolgourav147/nginx-custom
 
-      - name: Push Image to Harbor (K8s)
-        env:
-          IMAGE_NAME: nginx-custom
-          HARBOR_REGISTRY: harbor-registry.harbor.svc.cluster.local:5000
-          HARBOR_PROJECT: inventyv
-        run: |
-          docker push $HARBOR_REGISTRY/$HARBOR_PROJECT/$IMAGE_NAME:latest
+      - name: 🏗 Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            harbor-registry.harbor.svc.cluster.local:5000/inventyv/nginx-custom:latest
+          build-args: |
+            BASE_IMAGE=coolgourav147/nginx-custom
+          allow: insecure-registries
 
-      - name: Logout from Harbor
+      - name: 🚪 Logout from Harbor
         run: docker logout harbor-registry.harbor.svc.cluster.local:5000
