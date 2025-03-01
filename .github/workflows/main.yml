@@ -13,14 +13,6 @@ jobs:
       - name: 🔄 Checkout Code
         uses: actions/checkout@v3
 
-      - name: 🔐 Configure Docker Daemon for Insecure Registry
-        run: |
-          sudo mkdir -p /etc/docker
-          echo '{
-            "insecure-registries": ["harbor-registry.harbor.svc.cluster.local:5000"]
-          }' | sudo tee /etc/docker/daemon.json
-          sudo systemctl restart docker || sudo service docker restart
-
       - name: 🔐 Set Up Docker Auth for Harbor
         run: |
           mkdir -p ~/.docker
