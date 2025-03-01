@@ -1,4 +1,4 @@
-name: 🚀 Build and Push to Harbor (Insecure Registry with Buildx)
+name: 🚀 Build and Push to Harbor (Buildx with Insecure Registry)
 
 on:
   push:
@@ -21,13 +21,13 @@ jobs:
               http = true
               insecure = true
 
-      - name: 🔐 Login to Harbor with Buildx (Insecure)
-        uses: docker/login-action@v2
-        with:
-          registry: harbor-registry.harbor.svc.cluster.local:5000
-          username: ${{ secrets.HARBOR_USERNAME }}
-          password: ${{ secrets.HARBOR_PASSWORD }}
-          logout: true
+      - name: 🔐 Login to Harbor using Buildx
+        run: |
+          echo "${{ secrets.HARBOR_PASSWORD }}" | docker buildx create --use --name mybuilder
+          echo "${{ secrets.HARBOR_PASSWORD }}" | docker buildx login \
+            --username "${{ secrets.HARBOR_USERNAME }}" \
+            --password-stdin \
+            harbor-registry.harbor.svc.cluster.local:5000
 
       - name: 📥 Pull Base Image from DockerHub
         run: |
