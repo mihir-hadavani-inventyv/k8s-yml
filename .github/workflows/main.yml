@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-and-push:
-    runs-on: self-hosted  # Ensure your runner is configured
+    runs-on: self-hosted  # Ensure your runner is correctly configured
 
     steps:
       - name: 🔄 Checkout Code
@@ -21,17 +21,16 @@ jobs:
               http = true
               insecure = true
 
-      - name: 🔑 Load Harbor Credentials from Kubernetes Secret
+      - name: 🔑 Retrieve Harbor Credentials from Kubernetes Secret
         run: |
           mkdir -p ~/.docker
           kubectl get secret harbor-cred -n actions-runner-system -o jsonpath="{.data.\.dockerconfigjson}" | base64 --decode > ~/.docker/config.json
 
-      - name: 🔐 Login to Harbor Registry
-        uses: docker/login-action@v2
-        with:
-          registry: harbor-registry.harbor.svc.cluster.local:5000
-          username: ${{ secrets.HARBOR_USERNAME }}
-          password: ${{ secrets.HARBOR_PASSWORD }}
+      - name: 🔐 Login to Harbor Using Kubernetes Secret
+        run: |
+          HARBOR_USERNAME=$(kubectl get secret harbor-cred -n actions-runner-system -o jsonpath="{.data.username}" | base64 --decode)
+          HARBOR_PASSWORD=$(kubectl get secret harbor-cred -n actions-runner-system -o jsonpath="{.data.password}" | base64 --decode)
+          echo "$HARBOR_PASSWORD" | docker login harbor-registry.harbor.svc.cluster.local:5000 -u "$HARBOR_USERNAME" --password-stdin
 
       - name: 📥 Pull Base Image from DockerHub
         run: |
