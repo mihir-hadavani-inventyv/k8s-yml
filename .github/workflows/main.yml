@@ -32,13 +32,11 @@ jobs:
               http = true
               insecure = true
 
-      - name: ⬇️ Pull, Tag & Push Image Using Buildx
-        uses: docker/build-push-action@v5
-        with:
-          push: true
-          tags: harbor-registry.harbor.svc.cluster.local:5000/inventyv/nginx-custom:latest
-          cache-from: type=registry,ref=coolgourav147/nginx-custom:latest
-          cache-to: type=inline
-          build-args: |
-            BASE_IMAGE=coolgourav147/nginx-custom
-          load: true
+      - name: ⬇️ Pull Image from Docker Hub
+        run: docker pull coolgourav147/nginx-custom:latest
+
+      - name: 🏷 Tag Image for Harbor
+        run: docker tag coolgourav147/nginx-custom:latest harbor-registry.harbor.svc.cluster.local:5000/inventyv/nginx-custom:latest
+
+      - name: 🚀 Push Image to Harbor
+        run: docker push harbor-registry.harbor.svc.cluster.local:5000/inventyv/nginx-custom:latest
