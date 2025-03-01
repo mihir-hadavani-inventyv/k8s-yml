@@ -1,4 +1,4 @@
-name: 🚀 Build and Push to Harbor (K8s)
+name: 🚀 Build and Push to Harbor (Insecure Registry with Buildx)
 
 on:
   push:
@@ -7,32 +7,41 @@ on:
 
 jobs:
   build-and-push:
-    runs-on: self-hosted  # Ensure your runner is configured
+    runs-on: self-hosted  # Ensure your runner is correctly configured
 
     steps:
       - name: 🔄 Checkout Code
         uses: actions/checkout@v3
 
-      - name: ⚙️ Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+      - name: ⚙️ Configure Docker Daemon with Insecure Registry
+        run: |
+          sudo mkdir -p /etc/docker
+          echo '{
+            "insecure-registries": ["harbor-registry.harbor.svc.cluster.local:5000"]
+          }' | sudo tee /etc/docker/daemon.json
+          sudo systemctl restart docker
+
+      - name: 🛠 Set up Docker Buildx with Insecure Registry
+        uses: docker/setup-buildx-action@v2
         with:
           config-inline: |
             [registry."harbor-registry.harbor.svc.cluster.local:5000"]
               http = true
               insecure = true
 
-      - name: 🔐 Login to Harbor Registry
+      - name: 🔐 Login to Harbor with Buildx (Insecure)
         uses: docker/login-action@v2
         with:
           registry: harbor-registry.harbor.svc.cluster.local:5000
           username: ${{ secrets.HARBOR_USERNAME }}
           password: ${{ secrets.HARBOR_PASSWORD }}
+          logout: true
 
       - name: 📥 Pull Base Image from DockerHub
         run: |
           docker pull coolgourav147/nginx-custom
 
-      - name: 🏗 Build and Push Docker Image
+      - name: 🏗 Build and Push Docker Image with Buildx
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -43,6 +52,3 @@ jobs:
           build-args: |
             BASE_IMAGE=coolgourav147/nginx-custom
           allow: insecure-registries
-
-      - name: 🚪 Logout from Harbor
-        run: docker logout harbor-registry.harbor.svc.cluster.local:5000
