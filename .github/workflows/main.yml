@@ -3,17 +3,28 @@ name: 🚀 Build and Push to Harbor (Buildx with Insecure Registry)
 on:
   push:
     branches:
-      - main  # Change as needed
+      - main  # Adjust as needed
 
 jobs:
   build-and-push:
-    runs-on: self-hosted  # Ensure your runner is correctly configured
+    runs-on: self-hosted  # Ensure your runner matches
 
     steps:
       - name: 🔄 Checkout Code
         uses: actions/checkout@v3
 
-      - name: 🛠 Set up Docker Buildx with Insecure Registry
+      - name: 🔐 Set Up Docker Auth for Buildx
+        run: |
+          mkdir -p ~/.docker
+          echo '{
+            "auths": {
+              "harbor-registry.harbor.svc.cluster.local:5000": {
+                "auth": "'$(echo -n "${{ secrets.HARBOR_USERNAME }}:${{ secrets.HARBOR_PASSWORD }}" | base64)'"
+              }
+            }
+          }' > ~/.docker/config.json
+
+      - name: 🛠 Set Up Buildx with Insecure Registry
         uses: docker/setup-buildx-action@v2
         with:
           config-inline: |
@@ -21,26 +32,17 @@ jobs:
               http = true
               insecure = true
 
-      - name: 🔐 Login to Harbor using Buildx
-        run: |
-          echo "${{ secrets.HARBOR_PASSWORD }}" | docker buildx create --use --name mybuilder
-          echo "${{ secrets.HARBOR_PASSWORD }}" | docker buildx login \
-            --username "${{ secrets.HARBOR_USERNAME }}" \
-            --password-stdin \
-            harbor-registry.harbor.svc.cluster.local:5000
-
-      - name: 📥 Pull Base Image from DockerHub
-        run: |
-          docker pull coolgourav147/nginx-custom
-
-      - name: 🏗 Build and Push Docker Image with Buildx
+      - name: 🏗 Build and Push Image Using Buildx
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
+          builder: ${{ steps.buildx.outputs.name }}
           push: true
           tags: |
             harbor-registry.harbor.svc.cluster.local:5000/inventyv/nginx-custom:latest
           build-args: |
             BASE_IMAGE=coolgourav147/nginx-custom
-          allow: insecure-registries
+          allow: |
+            network.host
+            insecure-registries
