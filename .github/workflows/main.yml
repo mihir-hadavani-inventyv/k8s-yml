@@ -31,7 +31,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: 🔐 Log in to Harbor Registry
-        run: echo "${{ secrets.HARBOR_PASSWORD }}" | docker login mihir.harbor.com -u "${{ secrets.HARBOR_USERNAME }}" --password-stdin
+        run: echo "${{ secrets.HARBOR_PASSWORD }}" | docker login mihir.harbor.com -u "${{ secrets.HARBOR_USERNAME }}" --password-stdin --insecure
 
       - name: ⬇️ Pull Image from Docker Hub
         run: docker pull coolgourav147/nginx-custom:latest
