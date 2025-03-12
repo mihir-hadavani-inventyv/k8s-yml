@@ -8,7 +8,7 @@ on:
 
 jobs:
   run-cronjob:
-    runs-on: custom-runner-devops
+    runs-on: arc-runner-set
     steps:
       - name: Run a script
         run: echo "This is a scheduled job running at $(date)"
