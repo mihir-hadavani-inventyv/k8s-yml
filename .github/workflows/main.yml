@@ -1,14 +1,27 @@
-name: Scheduled Job
+name: Build and Push Nginx to Harbor
 
 on:
-  push:  # Runs on every push event
-  issues:
-    types: [opened]   # Runs every day at midnight UTC
-  workflow_dispatch:  # Allows manual trigger
-
+  push:
+    branches:
+      - main  # Trigger on push to the main branch
+  workflow_dispatch:
 jobs:
-  run-cronjob:
-    runs-on: arc-runner-set
+  build-and-push:
+    runs-on: self-hosted  # Run on your ARC runner
+
     steps:
-      - name: Run a script
-        run: echo "This is a scheduled job running at $(date)"
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Harbor
+        run: |
+          echo "${{ secrets.HARBOR_PASSWORD }}" | docker login mihir.harbor.com -u "${{ secrets.HARBOR_USERNAME }}" --password-stdin
+
+      - name: Pull, Tag, and Push Nginx Image
+        run: |
+          docker pull nginx:latest
+          docker tag nginx:latest mihir.harbor.com/inventyv/nginx:latest
+          docker push mihir.harbor.com/inventyv/nginx:latest
