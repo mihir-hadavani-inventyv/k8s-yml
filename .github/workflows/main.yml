@@ -16,22 +16,12 @@ jobs:
         DOCKER_TLS_CERTDIR: ""  # Disable TLS for DinD
 
     steps:
-      - name: 🛠 Start Docker Daemon
-        run: |
-          dockerd --host=unix:///var/run/docker.sock --insecure-registry=mihir.harbor.com &
-          sleep 10  # Allow Docker some time to start
 
       - name: 🔄 Checkout Code
         uses: actions/checkout@v3
 
-      - name: 🔐 Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
       - name: 🔐 Log in to Harbor Registry
-        run: echo "${{ secrets.HARBOR_PASSWORD }}" | docker login mihir.harbor.com -u "${{ secrets.HARBOR_USERNAME }}" --password-stdin --insecure
+        run: echo "${{ secrets.HARBOR_PASSWORD }}" | docker login mihir.harbor.com -u "${{ secrets.HARBOR_USERNAME }}" --password-stdin --tls-verify=false
 
       - name: ⬇️ Pull Image from Docker Hub
         run: docker pull coolgourav147/nginx-custom:latest
