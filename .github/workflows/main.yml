@@ -1,27 +1,28 @@
-name: 🚀 Pull, Tag & Push to Harbor with DinD in ARC
+name: 🚀 Pull, Tag & Push to Harbor
 
 on:
   push:
     branches:
       - main  # Adjust as needed
   workflow_dispatch:
+
 jobs:
   pull-tag-push:
-    runs-on: self-hosted  # Runs in your ARC Kubernetes runner
-
-    container:
-      image: docker:24.0.7-dind  # Runs Docker-in-Docker
-      options: --privileged  # Required for DinD
-      env:
-        DOCKER_TLS_CERTDIR: ""  # Disable TLS for DinD
+    runs-on: self-hosted  # Uses your ARC Kubernetes runner
 
     steps:
-
       - name: 🔄 Checkout Code
         uses: actions/checkout@v3
 
+      - name: 🛠 Configure Docker to Use Insecure Registry
+        run: |
+          sudo mkdir -p /etc/docker
+          echo '{ "insecure-registries": ["mihir.harbor.com"] }' | sudo tee /etc/docker/daemon.json
+          sudo systemctl restart docker  # Restart Docker to apply changes
+          sleep 5  # Give Docker some time to restart
+
       - name: 🔐 Log in to Harbor Registry
-        run: echo "${{ secrets.HARBOR_PASSWORD }}" | docker login mihir.harbor.com -u "${{ secrets.HARBOR_USERNAME }}" --password-stdin --tls-verify=false
+        run: echo "${{ secrets.HARBOR_PASSWORD }}" | docker login mihir.harbor.com -u "${{ secrets.HARBOR_USERNAME }}" --password-stdin
 
       - name: ⬇️ Pull Image from Docker Hub
         run: docker pull coolgourav147/nginx-custom:latest
