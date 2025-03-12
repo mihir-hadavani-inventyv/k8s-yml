@@ -8,21 +8,18 @@ on:
 
 jobs:
   pull-tag-push:
-    runs-on: self-hosted  # Ensures it runs on your ARC self-hosted runner
+    runs-on: self-hosted  # Runs in your ARC Kubernetes runner
 
     container:
-      image: docker:24.0.7-dind  # Runs inside a Docker-in-Docker container
-      options: --privileged  # Required for DinD to function
+      image: docker:24.0.7-dind  # Runs Docker-in-Docker
+      options: --privileged  # Required for DinD
+      env:
+        DOCKER_TLS_CERTDIR: ""  # Disable TLS for DinD
+      command: [ "dockerd", "--host=unix:///var/run/docker.sock", "--insecure-registry=mihir.harbor.com" ]
 
     steps:
       - name: 🔄 Checkout Code
         uses: actions/checkout@v3
-
-      - name: 🔧 Configure Docker for Insecure Registry
-        run: |
-          echo '{ "insecure-registries": ["mihir.harbor.com"] }' > /etc/docker/daemon.json
-          service docker restart
-          sleep 5  # Give Docker some time to restart
 
       - name: 🔐 Log in to Docker Hub
         uses: docker/login-action@v3
@@ -30,15 +27,14 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: 🔐 Log in to Harbor Registry
+        run: echo "${{ secrets.HARBOR_PASSWORD }}" | docker login mihir.harbor.com -u "${{ secrets.HARBOR_USERNAME }}" --password-stdin
 
       - name: ⬇️ Pull Image from Docker Hub
         run: docker pull coolgourav147/nginx-custom:latest
 
       - name: 🏷 Tag Image for Harbor
         run: docker tag coolgourav147/nginx-custom:latest mihir.harbor.com/inventyv/nginx-custom:latest
-
-      - name: 🔐 Log in to Harbor Registry
-        run: echo "${{ secrets.HARBOR_PASSWORD }}" | docker login mihir.harbor.com -u "${{ secrets.HARBOR_USERNAME }}" --password-stdin
 
       - name: 🚀 Push Image to Harbor
         run: docker push mihir.harbor.com/inventyv/nginx-custom:latest
