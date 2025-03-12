@@ -3,18 +3,30 @@ name: Build and Push Nginx to Harbor
 on:
   push:
     branches:
-      - main  # Trigger on push to the main branch
+      - main  # Runs when code is pushed to main
   workflow_dispatch:
+
 jobs:
   build-and-push:
-    runs-on: arc-runner-set  # Run on your ARC runner
+    runs-on: arc-runner-set  # Uses your ARC runner
+    container:
+      image: docker:24-dind  # Runs a Docker-in-Docker container
+      options: --privileged  # Required for DinD to work
+
+    services:
+      docker:
+        image: docker:24-dind
+        options: --privileged
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Start Docker Daemon
+        run: |
+          dockerd > /dev/null 2>&1 &
+          sleep 10
+          docker version
 
       - name: Log in to Harbor
         run: |
