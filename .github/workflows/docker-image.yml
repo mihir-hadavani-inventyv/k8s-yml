@@ -4,12 +4,12 @@ on:
   workflow_dispatch:
 
 jobs:
-
-  build:
-
-    runs-on: arc-runner-set
-
+  pull-nginx:
+    runs-on: self-hosted
+    container:
+      image: quay.io/podman/stable
+      options: --privileged
     steps:
-    - uses: actions/checkout@v4
-    - name: Build the Docker image
-      run: docker pull nginx:latest
+      - name: Pull Nginx with Podman
+        run: |
+          podman pull docker.io/library/nginx:latest
