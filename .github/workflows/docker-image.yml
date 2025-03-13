@@ -6,10 +6,6 @@ on:
 jobs:
   pull-nginx:
     runs-on: arc-runner-set
-    container:
-      image: quay.io/podman/stable
-      options: --privileged
     steps:
       - name: Pull Nginx with Podman
-        run: |
-          podman pull docker.io/library/nginx:latest
+        run: docker pull nginx:latest
