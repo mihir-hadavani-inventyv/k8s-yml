@@ -12,4 +12,4 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Build the Docker image
-      run: docker pull mihir.harbor.com/inventyv/nginx-custom
+      run: docker pull nginx:latest
